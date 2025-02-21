@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Привет</title>
+    <link href="/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/styles/main.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="text-center mb-4">Привет</h1>
+      <div class="row">
+        <div class="col-12 col-md-6 mb-4">
+          <div class="content-block">
+            <h2>Первая колонка</h2>
+            <p>Это текст первой колонки.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 mb-4">
+          <div class="content-block">
+            <h2>Вторая колонка</h2>
+            <p>Это текст второй колонки.</p>
+          </div>
+        </div>
+      </div>
+      <section id="gameSection" class="section">
+        <canvas id="gameCanvas" width="750" height="500"></canvas>
+      </section>
+      <script>
+        (function(){
+              const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
+              let cw = canvas.width = window.innerWidth/2, ch = canvas.height = window.innerHeight/2,
+                  center = { x: cw / 2, y: ch / 2 };
+              window.addEventListener("resize", () => {
+                cw = canvas.width = window.innerWidth/2;
+                ch = canvas.height = window.innerHeight/2;
+                center.x = cw / 2;
+                center.y = ch / 2;
+                createRings();
+                setBallPos();
+              });
+              const ball = { x: 0, y: 0, radius: 5, vx: 1, vy: -2.5, ax: 0, ay: 0.15, prevX: 0, prevY: 0 };
+              function setBallPos() {
+                if (!smallestRing) return;
+                const maxR = smallestRing - ball.radius,
+                      r = Math.random() * maxR,
+                      angle = Math.random() * 2 * Math.PI;
+                ball.x = center.x + r * Math.cos(angle);
+                ball.y = center.y + r * Math.sin(angle);
+                ball.prevX = ball.x;
+                ball.prevY = ball.y;
+              }
+              const impulse = 10;
+              let rings = [], currentRing = 0, ringThickness = 4, gapAngle = Math.PI / 3, smallestRing = 0;
+              function createRings() {
+                rings = [];
+                currentRing = 0;
+                const num = 12, spacing = 10;
+                smallestRing = Math.min(cw, ch) / 8;
+                const gapEven = Math.random() * 2 * Math.PI, gapOdd = Math.random() * 2 * Math.PI;
+                for (let i = 0; i < num; i++) {
+                  let radius = smallestRing + i * spacing,
+                      gapStart = (i % 2 === 0) ? gapEven : gapOdd,
+                      rot = 0.02 * (i % 2 === 0 ? 1 : -1);
+                  rings.push({ radius, thickness: ringThickness, gapAngle, gapStart, rotation: rot });
+                }
+              }
+              createRings();
+              setBallPos();
+              function norm(a) {
+                a = a % (2 * Math.PI);
+                return a < 0 ? a + 2 * Math.PI : a;
+              }
+              function inArc(a, start, end) {
+                a = norm(a);
+                start = norm(start);
+                end = norm(end);
+                return start < end ? a >= start && a <= end : a >= start || a <= end;
+              }
+              function reflect(ring, dx, dy, d) {
+                const nx = dx / d, ny = dy / d,
+                      dot = ball.vx * nx + ball.vy * ny;
+                ball.vx -= 2 * dot * nx;
+                ball.vy -= 2 * dot * ny;
+                ball.vx += ring.rotation * impulse * (-ny);
+                ball.vy += ring.rotation * impulse * nx;
+                return { nx, ny };
+              }
+              function update() {
+                ball.prevX = ball.x;
+                ball.prevY = ball.y;
+                ball.vx += ball.ax;
+                ball.vy += ball.ay;
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                if (ball.x - ball.radius < 0) { ball.x = ball.radius; ball.vx *= -1; }
+                if (ball.x + ball.radius > cw) { ball.x = cw - ball.radius; ball.vx *= -1; }
+                if (ball.y - ball.radius < 0) { ball.y = ball.radius; ball.vy *= -1; }
+                if (ball.y + ball.radius > ch) { ball.y = ch - ball.radius; ball.vy *= -1; }
+                if (currentRing < rings.length) {
+                  const ring = rings[currentRing],
+                        dx = ball.x - center.x,
+                        dy = ball.y - center.y,
+                        d = Math.hypot(dx, dy),
+                        dPrev = Math.hypot(ball.prevX - center.x, ball.prevY - center.y),
+                        angle = norm(Math.atan2(dy, dx)),
+                        gapStart = ring.gapStart;
+                  if (dPrev < ring.radius && d >= ring.radius) {
+                    if (inArc(angle, gapStart, gapStart + ring.gapAngle)) {
+                      currentRing++;
+                    } else {
+                      const { nx, ny } = reflect(ring, dx, dy, d);
+                      ball.x = center.x + nx * (ring.radius - ball.radius - 0.5);
+                      ball.y = center.y + ny * (ring.radius - ball.radius - 0.5);
+                    }
+                  } else if (Math.abs(d - ring.radius) < ball.radius * 0.5 && !inArc(angle, gapStart, gapStart + ring.gapAngle)) {
+                    const { nx, ny } = reflect(ring, dx, dy, d);
+                    if (d < ring.radius) {
+                      ball.x = center.x + nx * (ring.radius - ball.radius - 0.5);
+                      ball.y = center.y + ny * (ring.radius - ball.radius - 0.5);
+                    } else {
+                      ball.x = center.x + nx * (ring.radius + ball.radius + 0.5);
+                      ball.y = center.y + ny * (ring.radius + ball.radius + 0.5);
+                    }
+                  }
+                } else {
+                  const outer = rings[rings.length - 1],
+                        d = Math.hypot(ball.x - center.x, ball.y - center.y);
+                  if (d > outer.radius + 25) {
+                    createRings();
+                    setBallPos();
+                    ball.vx = 1 * (Math.random() > 0.5 ? 1 : -1);
+                    ball.vy = -2.5;
+                  }
+                }
+                for (let i = currentRing; i < rings.length; i++) {
+                  rings[i].gapStart = norm(rings[i].gapStart + rings[i].rotation);
+                }
+              }
+              function draw() {
+                ctx.fillStyle = "#111";
+                ctx.fillRect(0, 0, cw, ch);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#0ff";
+                for (let i = currentRing; i < rings.length; i++) {
+                  const { radius, gapStart, gapAngle } = rings[i];
+                  ctx.beginPath();
+                  ctx.arc(center.x, center.y, radius, gapStart + gapAngle, gapStart + 2 * Math.PI, false);
+                  ctx.stroke();
+                }
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, 2 * Math.PI);
+                ctx.fill();
+              }
+              function loop() {
+                update();
+                draw();
+                requestAnimationFrame(loop);
+              }
+              loop();
+            })();
+      </script>
+      <div class="text-center">
+        <button class="custom-button">Нажми меня</button>
+      </div>
+    </div>
+  </body>
+</html>

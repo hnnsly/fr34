@@ -1,0 +1,61 @@
+$primary-color: #ff4d4d;
+$secondary-color: #ff9933;
+$text-color: #333;
+$background-color: #fffaf0;
+$font-family: "Arial", sans-serif;
+
+body {
+    font-family: $font-family;
+    color: $text-color;
+    background-color: $background-color;
+    background-image: linear-gradient(120deg, #fffaf0, #ffe4e1);
+}
+
+h1 {
+    color: $primary-color;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.content-block {
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(255, 77, 77, 0.1);
+    border: 1px solid rgba(255, 153, 51, 0.2);
+
+    h2 {
+        color: $primary-color;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
+
+    p {
+        line-height: 1.8;
+        color: #444;
+    }
+}
+.custom-button {
+    display: inline-block;
+    padding: 12px 25px;
+    background-color: $primary-color;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(255, 77, 77, 0.2);
+
+    &:hover {
+        background-color: $secondary-color;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 153, 51, 0.3);
+    }
+}
+
+.error-title {
+    font-size: 6rem;
+    color: $primary-color;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 0px $secondary-color;
+}
